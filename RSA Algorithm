@@ -1,0 +1,58 @@
+import pandas as pd
+import hashlib
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_v1_5
+import time
+
+# Load the dataset
+dataset_path = '/Users/kishore/Desktop/mutualfunds.csv'
+df = pd.read_csv(dataset_path)
+
+# Select the column for encryption
+column_to_encrypt = 'scheme_name'
+
+# Function to apply MD5 hashing
+def md5_hash(data):
+    return hashlib.md5(data.encode()).hexdigest()
+
+# Function to apply RSA encryption
+def rsa_encrypt(data, public_key):
+    cipher = PKCS1_v1_5.new(public_key)
+    return cipher.encrypt(data.encode())
+
+# Function to measure time complexity
+def measure_time_complexity(func, *args):
+    start_time = time.time()
+    result = func(*args)
+    end_time = time.time()
+    time_taken = end_time - start_time
+    return result, time_taken
+
+# Generate RSA key pair
+key = RSA.generate(2048)
+public_key = key.publickey()
+
+# Apply MD5 hashing and measure time complexity
+df['md5_encrypted'] = df[column_to_encrypt].apply(md5_hash)
+md5_result, md5_time_taken = measure_time_complexity(df[column_to_encrypt].apply, md5_hash)
+
+# Apply RSA encryption and measure time complexity
+df['rsa_encrypted'] = df[column_to_encrypt].apply(lambda x: rsa_encrypt(x, public_key))
+rsa_result, rsa_time_taken = measure_time_complexity(df[column_to_encrypt].apply, lambda x: rsa_encrypt(x, public_key))
+
+# Calculate improvement percentage
+improvement_percentage = ((rsa_time_taken - md5_time_taken) / rsa_time_taken) * 100
+
+# Ensure a positive improvement percentage
+improvement_percentage = abs(improvement_percentage)
+
+# Display results
+print("MD5 Encrypted:")
+print(df['md5_encrypted'])
+print("\nRSA Encrypted:")
+print(df['rsa_encrypted'])
+print(f"\nTime taken for MD5: {md5_time_taken} seconds")
+print(f"Time taken for RSA: {rsa_time_taken} seconds")
+print(f"Improvement Percentage: {improvement_percentage}%")
+if(rsa_time_taken>md5_time_taken):
+    print(f"MD5 ALGORITHM TAKES LESS TIME AND HAS MORE SCALABILTY OF {improvement_percentage}%")
